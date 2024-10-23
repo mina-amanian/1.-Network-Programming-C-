@@ -1,0 +1,366 @@
+#include <stdio.h>
+#include<string.h>
+#include <stdlib.h>
+
+struct DTLSCiphertext2{
+        char type[9];   // 9 for \0
+        char version[16];
+        char epoch[5];             
+        unsigned long sequence_number;      //unint48 
+        char length[5];
+        char fragment[131072];   //2^14 byte ==>2^17 bit
+       } ;
+	   
+struct DTLSCiphertextShort3 {
+        char firstoct[9];
+        unsigned short CID; //Variable <0_2^16-1>          
+        unsigned char sequence_number;         // 8 bit
+        char length[5];
+        char record[131072];   //2^14  byte ==>2^17 bit
+       } ;
+
+struct DTLSCiphertext3{
+        char firstoct[9];
+        unsigned short CID; //Variable <0_2^16-1>           
+        unsigned short sequence_number;         // 16 bit
+        char length[5];
+        char record[131072];   //2^14  byte ==>2^17 bit
+       } ;
+
+
+int main()
+{
+     /* Pointer to the file */
+      FILE *fp1;
+     /* Character variable to read the content of file */
+      int c;
+      char str[900]= {'\0'}; // set array to initial all NUL bytes
+      char str2[900]= {'\0'}; // set array to initial all NUL bytes
+      int flag=0;
+      char epoch[5]; 
+      char sequence[13];
+      char type[9];
+      char version[5]; 
+      char length[5];
+      int s ;
+      struct  DTLSCiphertext2 d2;
+      struct DTLSCiphertext3 d3;
+      struct DTLSCiphertextShort3 ds3;
+      
+      
+     /* Opening a file in r mode*/
+     fp1= fopen ("convert3.txt", "r");
+
+     /* Infinite loop –I have used break to come out of the loop*/
+      int i=0;
+     while(1)
+     {
+        c = fgetc(fp1);
+        if(c==EOF)
+            break;
+        else  
+        {  
+            // Add other part packet that should not changed
+            // Bits that before Type
+           char cToStr[2];
+           char ch=(char)c;
+           cToStr[1] = '\0';
+           
+           char currentChar = ch;
+           cToStr[0] = currentChar;
+           strcat ( str, cToStr );
+           
+         
+           if (c == '|' && i!=2)
+              i++;
+        }      
+        if (i==2)
+        {
+          // we should go forward Certain bits to achieve to the Type bits (j<124 shows that)
+          for (int j=0; j<124;)
+            {
+              c = fgetc(fp1);
+              if(c==EOF)
+                break;
+              char cToStr[2];
+              char ch=(char)c;
+              cToStr[1] = '\0';
+           
+              char currentChar = ch;
+              cToStr[0] = currentChar;  
+              strcat ( str, cToStr );
+
+              if (c!='|')
+              {
+               j++;
+
+              } 
+            }
+            c = fgetc(fp1);
+            strcat ( str, "|" );
+             
+             
+              // Read Type
+             
+             c = fgetc(fp1);
+             type[0] = c;
+             c = fgetc(fp1);
+             type[1] = c;
+             type[2]='\0';
+             c = fgetc(fp1);  // read char "|"
+             
+             // Read Version
+             for(int k=0;k<4;)
+               { 
+                 
+                 c = fgetc(fp1);
+                 if(c!='|')
+                  {
+                   version[k] = c;
+                    //         printf("\n%s",version);
+                  k++;
+                      
+                  }     
+                }
+                version[4] = '\0';
+            //   Epoch    
+             
+             for(int k=0;k<4;)
+               { 
+                 
+                 c = fgetc(fp1);
+                 if(c!='|')
+                  {
+                   epoch[k] = c;
+                   
+                  k++;
+                      
+                  }     
+                }
+                epoch[4] = '\0';
+              
+            
+              // Read  Sequence Number    
+              
+             for(int k=0;k<12;)
+               { 
+                 
+                 c = fgetc(fp1);
+                 if(c!='|')
+                  {
+                   sequence[k] = c;
+                    //         printf("\n%s",version);
+                  k++;
+                      
+                  }     
+                }
+                sequence[12] = '\0';
+               
+            // Read  Length    
+            
+             for(int k=0;k<4;)
+               { 
+                 
+                 c = fgetc(fp1);
+                 if(c!='|')
+                  {
+                   length[k] = c;
+                   
+                  k++;
+                      
+                  }     
+                }
+                length[4] = '\0';
+                
+                
+             
+            // REad fragment 
+            while(1){
+             c = fgetc(fp1);
+             if(c==EOF)
+                break;
+              else  
+             {  
+            // Add other part packet that should not changed
+           char cToStr[2];
+           char ch=(char)c;
+           cToStr[1] = '\0';
+           
+           char currentChar = ch;
+           cToStr[0] = currentChar;
+           strcat ( str2, cToStr );
+             } 
+             
+            }
+           
+        }  
+        
+        
+        
+        // define struct dtls1.d2
+         
+        strcpy( d2.type, type);
+        strcpy( d2.version, version); 
+        strcpy( d2.epoch, epoch);
+        s = atoi(sequence);
+        d2.sequence_number=s;
+        strcpy( d2.length, length);
+        strcpy( d2.fragment, str2);
+   
+     }//while 1
+     
+     
+    if(s<255)
+    {
+           
+         
+        strcpy( ds3.record ,d2.fragment );
+        
+        
+        if(d2.epoch[3]=='0')
+        
+         {  
+          strcpy( ds3.firstoct ,"24");
+         }
+        if(d2.epoch[3]=='1')
+        
+         {  
+          strcpy( ds3.firstoct ,"25");
+         }
+        if(d2.epoch[3]=='2')
+        
+         {  
+          strcpy( ds3.firstoct ,"26");
+         }
+          if(d2.epoch[3]=='3')
+        
+         {  
+          strcpy( ds3.firstoct ,"27");
+         }
+   
+     ds3.sequence_number=d2.sequence_number ;
+      strcpy( ds3.length,d2.length );
+ 
+    
+        
+    }// sequence <255 short heade
+    else
+    {
+        strcpy( d3.record ,d2.fragment );
+        
+        
+        if(d2.epoch[3]=='0')
+        
+         {  
+          strcpy( d3.firstoct ,"24");
+         }
+        if(d2.epoch[3]=='1')
+        
+         {  
+          strcpy( d3.firstoct ,"25");
+         }
+        if(d2.epoch[3]=='2')
+        
+         {  
+          strcpy( d3.firstoct ,"26");
+         }
+          if(d2.epoch[3]=='3')
+        
+         {  
+          strcpy( d3.firstoct ,"27");
+         }
+    // cid not exist
+     d3.sequence_number=d2.sequence_number ;
+      strcpy( d3.length,d2.length );
+
+    }//long header 
+  
+        
+     fclose(fp1);
+     
+     ////==================   write to file
+     
+     //====================================================
+     
+     FILE *fw = fopen("file.txt", "w");
+     if (fw == NULL)
+     {
+       printf("Error opening file!\n");
+       exit(1);
+     }
+
+      /* print some text */
+     char s1[3]; 
+     char s2[5]; 
+     
+     
+     fprintf(fw, "%s", str);
+     if(s<255)
+     {
+         for(int r=0 ;r<3;r++)
+     {
+         s1[r]=sequence[r+10];
+     }
+         s1[2]='\0';
+         
+
+        fprintf(fw, "%s|", ds3.firstoct);
+          
+        fprintf(fw, "%s|",s1);
+       
+        for(int e=0;e<4;e++)
+        {
+           if(e==2  )
+              fprintf(fw, "|" );
+        fprintf(fw, "%c", ds3.length[e]);
+        
+        }
+         
+        fprintf(fw, "%s", str2);
+        //fprintf(fw, "%s", s1);
+        
+        
+     
+     }
+     
+     else
+     {   for(int r=0 ;r<5;r++)
+      {
+         s1[r]=sequence[r+10];
+      }
+       s1[4]='\0';
+        fprintf(fw, "%s|", d3.firstoct);
+        
+        for(int r=0 ;r<5;r++)
+     {
+         s2[r]=sequence[r+9];
+     }
+         s2[4]='\0';
+        for(int e=0;e<4;e++)
+        {
+           if(e==2  )
+            fprintf(fw, "|" );
+           fprintf(fw, "%c|",s2[e]);
+        }  
+        fprintf(fw, "|" );
+         
+        for(int e=0;e<4;e++)
+        {
+           if(e==2  )
+              fprintf(fw, "|" );
+        fprintf(fw, "%c", d3.length[e]);
+        
+        }
+          
+        fprintf(fw, "%s", str2);
+        
+        
+      
+         
+     }
+      
+     
+    fclose(fw);
+     
+     return 0;
+}
