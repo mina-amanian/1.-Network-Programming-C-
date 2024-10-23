@@ -25,3 +25,22 @@ struct { </br>
    uint16 length;</br>
    opaque fragment[DTLSPlaintext.length];</br>
  } DTLSPlaintext;</br>
+ 
+<h3> 1.3 Difference of DTLS 1.2 and DTLS 1.3 </h3>
+
+The DTLS 1.3 record layer is different from the DTLS 1.2 record layer. The main differences are as follows:</br>
+
+The DTLS 1.3 record layer is different from the DTLS 1.2 record layer.</br>
+ 1. The DTLSCiphertext structure omits the version and type fields.</br>
+ 2. The DTLSCiphertext structure has a variable length header.</br>
+ 3. The number of bits used for the epoch and sequence number fields in the DTLSCiphertext structure have
+been reduced from DTLS1.2 versions.</br>
+
+ 
+
+![DTLS 1.2 Cipher Text Header](./1.PNG)
+
+ <h3>Results</h3>
+
+![DTLS 1.2 Cipher Text Header](./2.PNG)
+ 
